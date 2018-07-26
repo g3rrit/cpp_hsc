@@ -22,11 +22,11 @@
 namespace fs = std::experimental::filesystem;
 
 
-void hc_to_cc(std::string& dest_dir, std::string& src_dir);
+void hc_to_cc(std::vector<fs::path>& files, std::string& dest_dir);
 
-void cc_to_cpp(std::string& dest_dir, std::string& src_dir);
+void cc_to_hc(std::vector<fs::path>& files, std::string& dest_dir);
 
-void hc_to_cc_file(const fs::path& file_path, std::string& dest_dir);
+void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std::string& dest_dir);
 
 void cc_to_hc_file(const fs::path& file_path, std::string& dest_dir);
 
@@ -70,12 +70,18 @@ int main(int argc, char **argv)
         return 0;
     }
 
+    std::vector<fs::path> files;
+
     for(auto& p : fs::recursive_directory_iterator(src_dir))
     {
         if(fs::is_directory(p))
         {
             std::string dir_name = dest_dir + p.path().string().substr(src_dir.size(), p.path().string().size());
             std::cout << "creating dir: " << dir_name << std::endl;
+
+            if(fs::is_directory(fs::path(dir_name)))
+                continue;
+
             if(!fs::create_directory(fs::path(dir_name)))
             {
                 std::cout << "error -> creating directory[" << dir_name << "]" << std::endl;
@@ -84,24 +90,45 @@ int main(int argc, char **argv)
         }
         else if(fs::is_regular_file(p))
         {
-            std::cout << "file: " << p.path() << std::endl;
-            if(mode == 1)
+            if(mode == 0)
             {
-                std::cout << "converting hc to cc" << std::endl;
-                hc_to_cc_file(p.path(), dest_dir);
+                if(p.path().extension().string().compare(std::string(HPP_FILE_EXT)) == 0 || p.path().extension().string().compare(std::string(CPP_FILE_EXT)))
+                    files.push_back(p);
             }
-            else if(mode == 0)
+            else if(mode == 1)
             {
-                std::cout << "converting cc to hc" << std::endl;
-                cc_to_hc_file(p.path(), dest_dir);
+                if(p.path().extension().string().compare(std::string(CC_FILE_EXT)) == 0)
+                    files.push_back(p);
             }
         }
     }
 
+    if(mode == 0)
+        hc_to_cc(files, dest_dir);
+    else if(mode == 1)
+        cc_to_hc(files, dest_dir);
+
     return 0;
 }
 
-void hc_to_cc_file(const fs::path& file_path, std::string& dest_dir)
+void hc_to_cc(std::vector<fs::path>& files, std::string& dest_dir)
+{
+    std::map<std::string, std::pair<fs::path, fs::path>> file_map;
+
+    for(auto file : files)
+    {
+        if(file.extension().string().compare(std::string(HPP_FILE_EXT)))
+    }
+}
+
+void cc_to_hc(std::vector<fs::path>& files, std::string& dest_dir)
+{
+    for(auto file : files)
+        cc_to_hc_file(file, dest_dir);
+}
+
+
+void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std::string& dest_dir);
 {
 
 }
@@ -127,20 +154,27 @@ void cc_to_hc_file(const fs::path& file_path, std::string& dest_dir)
 
     std::fstream *active = nullptr;
 
+#define LINE_LENGTH 256
+    char line[LINE_LENGTH];
+
     while(!input_file.eof())
     {
-        char c;
-        input_file.get(&c);
+        input_file.getline(line, LINE_LENGTH);
         if(input_file.bad())
         {
-            std::cout << "error -> reading characters" << std::endl;
+            std::cout << "error -> reading line" << std::endl;
             close_files();
             return;
         }
 
+        std::cout << "line: " << line << std::endl;
 
-
-
+        if(std::string("#hdr").compare(0, 4, line, 4) == 0)
+        {
+            std::cout << "found header line" << std::endl;
+            if(!h_file.is_open())
+            {}
+        }
     }
 
     close_files();
