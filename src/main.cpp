@@ -149,7 +149,7 @@ void cc_to_hc(std::string& dest_dir, std::string& src_dir)
     }
 }
 
-#define LINE_LENGTH 256
+#define LINE_LENGTH 1024
 
 void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std::string& dest_dir, std::string& src_dir)
 {
@@ -198,6 +198,8 @@ void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std
         return;
     }
 
+    char line[LINE_LENGTH];
+
     out_file << "#hdr" << std::endl;
     if(header)
     {
@@ -210,9 +212,13 @@ void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std
         }
         while(!h_input_file.eof())
         {
-            char c;
-            h_input_file.get(c);
-            out_file << c;
+            h_input_file.getline(line, LINE_LENGTH);
+            if(h_input_file.bad())
+            {
+                std::cout << "error -> reading header input file";
+                return;
+            }
+            out_file << line;
         }
     }
     out_file << "#src" << std::endl;
@@ -227,9 +233,13 @@ void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std
         }
         while(!s_input_file.eof())
         {
-            char c;
-            h_input_file.get(c);
-            out_file << c;
+            s_input_file.getline(line, LINE_LENGTH);
+            if(s_input_file.bad())
+            {
+                std::cout << "error -> reading source input file";
+                return;
+            }
+            out_file << line;
         }
 
     }
