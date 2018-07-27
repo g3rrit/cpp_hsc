@@ -160,8 +160,6 @@ void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std
                             if(out_file.is_open())      \
                                 out_file.close();
 
-#define convert_tag(line)   std::string(line).substr(10, strlen(line) - 10)
-
     std::fstream h_input_file;
     std::fstream s_input_file;
     std::fstream out_file;
@@ -200,28 +198,25 @@ void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std
         return;
     }
 
-    if(header && !source)
+    out_file << "#hdr" << std::endl;
+    if(header)
     {
         h_input_file.open(h_file_path.string(), std::fstream::in);
         if(!h_input_file.good())
         {
             std::cout << "error -> opening header input file" << std::endl;
-            hc_close_files()
+            hc_close_files();
             return;
         }
         while(!h_input_file.eof())
         {
-            char line[LINE_LENGTH];
-            h_input_file.getline(line, LINE_LENGTH);
-            if(std::string("//####----").compare(0,10,line,10) == 0)
-            {
-                out_file << "#hdr " << convert_tag(line) << std::endl;    
-                continue;
-            }
-            out_file << line << std::endl;
+            char c;
+            h_input_file.get(c);
+            out_file << c;
         }
     }
-    else if(source && !header)
+    out_file << "#src" << std::endl;
+    if(source)
     {
         s_input_file.open(s_file_path.string(), std::fstream::in);
         if(!s_input_file.good())
@@ -232,57 +227,12 @@ void hc_to_cc_file(const fs::path& h_file_path, const fs::path& s_file_path, std
         }
         while(!s_input_file.eof())
         {
-            char line[LINE_LENGTH];
-            s_input_file.getline(line, LINE_LENGTH);
-            if(std::string("//####----").compare(0,10,line,10) == 0)
-            {
-                out_file << "#src " << convert_tag(line) << std::endl;
-                continue;
-            }
-            out_file << line << std::endl;
-        }
-    }
-    else if(source && header)
-    {
-        h_input_file.open(h_file_path.string(), std:fstream::in);
-        if(!h_input_file.good())
-        {
-            std::cout << "error -> opening header input file" << std::endl;
-            hc_close_files();
-            return;
-        }
-        s_input_file.open(s_file_path.string(), std::fstream::in);
-        if(!s_input_file.good())
-        {
-            std::cout << "error -> opening source input file" << std::endl;
-            hc_close_files();
-            return;
+            char c;
+            h_input_file.get(c);
+            out_file << c;
         }
 
-        active_file = &h_input_file;
-        bool in_header = true;
-        while(!h_input_file.eof() || !s_input_file.eof())
-        {
-            if(h_input_file.eof())
-            {
-                active_file = &s_input_file;
-                in_header = true;
-            }
-            else if(s_input_file.eof())
-            {
-                active_file = &h_input_file;
-                in_header = false;
-            }
-                
-            char line[LINE_LENGTH];
-            active_file->getline(line, LINE_LENGTH);
-            if(std::string("//####----").compare(0,10,line,10) == 0)
-            {
-                out_file << ""
-            }
-        }
     }
-
 
     hc_close_files();
 }
@@ -333,7 +283,6 @@ void cc_to_hc_file(const fs::path& file_path, std::string& dest_dir, std::string
 
         std::cout << "line: " << line << std::endl;
 
-        bool marker = false;
         if(std::string("#hdr").compare(0, 4, line, 4) == 0)
         {
             std::cout << "found header line" << std::endl;
@@ -348,7 +297,7 @@ void cc_to_hc_file(const fs::path& file_path, std::string& dest_dir, std::string
                 }
             }
             active_file = &h_file;
-            marker = true;
+            continue;
         }
         else if(std::string("#src").compare(0,4, line, 4) == 0)
         {
@@ -364,21 +313,6 @@ void cc_to_hc_file(const fs::path& file_path, std::string& dest_dir, std::string
                 }
             }
             active_file = &s_file;
-            marker = true;
-        }
-
-        if(marker)
-        {
-            char *sec;
-            for(sec = &line[5]; *sec != 0 && *sec == ' '; sec++);
-            for(char *c = sec; *c != 0; c++)
-                if(*c == ' ' || *c == '\r' || *c == '\n')
-                    *c = 0;
-
-            if(sec != 0)
-            {
-                *active_file << "//####----" << sec << "----####//" << std::endl;
-            }
             continue;
         }
 
